@@ -25,7 +25,8 @@ GRAFANA_DASHBOARDS_LOAD_PATH = r"D:\test\temp01\grafana-test-gitops\all-dashboar
 IGNORE_FOLDER_IS_EXISTS = True
 #IGNORE_FOLDER_IS_EXISTS = False
 
-DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = True
+#DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = True
+DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = False
 
 # get grafana dashboard's folders list
 def grafana_get_folder():
@@ -48,7 +49,7 @@ def grafana_get_folder():
     return data.decode("utf-8")
 
 # get all grafana dashboards list
-def grafana_get_all_dashboards():
+def grafana_get_all_dashboard_data():
     import http.client
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
@@ -58,6 +59,25 @@ def grafana_get_all_dashboards():
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
         conn.request("GET", "/api/search?type=dash-db", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        #print(data.decode("utf-8"))
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    return data.decode("utf-8")
+
+# get all folder data
+def grafana_get_all_dashboard_folder_data():
+    import http.client
+    try:
+        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
+        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
+        payload = ''
+        headers = {
+            'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        conn.request("GET", "/api/search?type=dash-folder", payload, headers)
         res = conn.getresponse()
         data = res.read()
         #print(data.decode("utf-8"))
@@ -125,7 +145,7 @@ def get_and_create_grafana_dashboards_folder():
 # Get all grafana dashboard json
 def download_grafana_dashboards():
     
-    dashboardsInfoJsonStr = grafana_get_all_dashboards()
+    dashboardsInfoJsonStr = grafana_get_all_dashboard_data()
     dashboardsInfoJsonList = json.loads(dashboardsInfoJsonStr)
     for dashboardInfoJson in dashboardsInfoJsonList:
         try:
@@ -213,8 +233,8 @@ def create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJs
             dashboardJsonDict["folderId"] = folderGrafanaJsonDic["id"]
             dashboardJsonDict["folderUid"] = folderGrafanaJsonDic["uid"]
             dashboardJsonDict["dashboard"]["id"] = None
-            #dashboardJsonDict["dashboard"]["uid"] = folderGrafanaJsonDic["uid"]
             dashboardJsonDict["dashboard"]["uid"] = None
+            #dashboardJsonDict["overwrite"] = True
             dashboardJsonDict["meta"]["url"] = folderGrafanaJsonDic["url"]
             create_grafana_dashboard(dashboardJsonDict)
             
@@ -242,6 +262,30 @@ def create_grafana_dashboard_folder(folderJsonStr):
         res = conn.getresponse()
         data = res.read()
         logger.info(data.decode("utf-8"))
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    return data.decode("utf-8")
+
+# delete grafana dashboard's folder
+def delete_grafana_dashboard_folder(folderUid):
+    import http.client
+    import json
+    try:
+        logger.info("delete_grafana_dashboard_folder delete folder folderUid " + folderUid + " ...")
+        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
+        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
+        payload = ''
+
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        conn.request("DELETE", "/api/folders/" + folderUid, payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        logger.info(data.decode("utf-8"))
+        logger.info("delete_grafana_dashboard_folder delete folder folderUid " + folderUid + " finish")
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
@@ -281,6 +325,11 @@ def create_grafana_dashboards():
     return 0
 
 def delete_all_grafana_dashboards():
+    dashboardFoldersInfoJsonStr = grafana_get_all_dashboard_folder_data()
+    dashboardFoldersInfoJsonList = json.loads(dashboardFoldersInfoJsonStr)
+    for dashboardFoldersInfoJson in dashboardFoldersInfoJsonList:
+        logger.info("dashboardFoldersInfoJson: " + str(dashboardFoldersInfoJson))
+        delete_grafana_dashboard_folder(str(dashboardFoldersInfoJson["uid"]))
     return 0
 
 # restore all grafana dashboards from local grafana files
