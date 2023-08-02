@@ -92,7 +92,7 @@ def grafana_get_all_dashboard_folder_data():
     logger.info("grafana_get_all_dashboard_folder_data() finish")
     return data.decode("utf-8")
 
-# get specific folder data
+# delete specific folder by folderUid
 def grafana_delete_specific_dashboard_folder_data_by_folderuid(folderUid):
     import http.client
     logger.info("grafana_delete_specific_dashboard_folder_data_by_folderuid() ...")
@@ -124,7 +124,7 @@ def grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle):
         # get specific folders data by title
         for folderJsonDic in foldersJsonList:
             if folderJsonDic["title"] == str(folderTitle):
-                return str(folderJsonDic["uid"])
+                return folderJsonDic
         
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
@@ -161,14 +161,14 @@ def get_and_create_grafana_dashboards_folder():
     foldersJsonList = json.loads(foldersJsonStr)
     
     # get all folders data
-    for folderJsonDic in foldersJsonList:
+    for folderJsonDict in foldersJsonList:
         try:
-            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(folderJsonDic["title"]))
+            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(folderJsonDict["title"]))
             logger.info("-------------------------------------")
-            logger.debug("folder Json: " + str(folderJsonDic))
-            logger.info("folder title: " + str(folderJsonDic["title"]))
-            logger.info("folder uid: " + str(folderJsonDic["uid"]))
-            logger.info("folder id: " + str(folderJsonDic["id"]))
+            logger.debug("folder Json: " + str(folderJsonDict))
+            logger.info("folder title: " + str(folderJsonDict["title"]))
+            logger.info("folder uid: " + str(folderJsonDict["uid"]))
+            logger.info("folder id: " + str(folderJsonDict["id"]))
             
             # create folder
             logger.info("create folder " + folderCreatePath + " ...")
@@ -180,7 +180,7 @@ def get_and_create_grafana_dashboards_folder():
             # get and create folder json
             logger.info("save folder json " + folderJsonSavePath + " ...")
             with open(folderJsonSavePath, 'w+', encoding='UTF-8') as f:
-                f.write(str(folderJsonDic))
+                f.write(str(folderJsonDict))
             logger.info("save folder json " + folderJsonSavePath + " finish")
         except FileNotFoundError:
             logger.info("The 'docs' directory does not exist")
@@ -300,7 +300,7 @@ def create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJs
 def create_grafana_dashboard_folder(folderJsonDic):
     import http.client
     import json
-    logger.info("create_grafana_dashboard_folder(folderJsonStr) ...")
+    logger.info("create_grafana_dashboard_folder(folderJsonDic) ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -319,14 +319,14 @@ def create_grafana_dashboard_folder(folderJsonDic):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
-    logger.info("create_grafana_dashboard_folder(folderJsonStr) finish")
+    logger.info("create_grafana_dashboard_folder(folderJsonDic) finish")
     return data.decode("utf-8")
 
 # delete grafana dashboard's folder
 def delete_grafana_dashboard_folder(folderUid):
     import http.client
     import json
-    logger.info("delete_grafana_dashboard_folder() ...")
+    logger.info("delete_grafana_dashboard_folder(folderUid) ...")
     try:
         logger.info("delete_grafana_dashboard_folder delete folder folderUid " + folderUid + " ...")
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
@@ -345,7 +345,7 @@ def delete_grafana_dashboard_folder(folderUid):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
-    logger.info("delete_grafana_dashboard_folder() finish")
+    logger.info("delete_grafana_dashboard_folder(folderUid) finish")
     return data.decode("utf-8")
 
 # create all grafana dashboards
@@ -395,20 +395,9 @@ def delete_all_grafana_dashboards():
     logger.info("delete_all_grafana_dashboards() finish")
     return 0
 
-# (progressing)
-def delete_specific_grafana_folder_dashboards():
-    logger.info("delete_specific_grafana_folder_dashboards() ...")
-    dashboardFoldersInfoJsonStr = grafana_get_all_dashboard_folder_data()
-    dashboardFoldersInfoJsonList = json.loads(dashboardFoldersInfoJsonStr)
-    for dashboardFoldersInfoJson in dashboardFoldersInfoJsonList:
-        logger.info("dashboardFoldersInfoJson: " + str(dashboardFoldersInfoJson))
-        delete_grafana_dashboard_folder(str(dashboardFoldersInfoJson["uid"]))
-    logger.info("delete_specific_grafana_folder_dashboards() finish")
-    return 0
-
 # create all grafana dashboards in specific folder
 def create_specific_grafana_folder_dashboards(dashboardFolder):
-    logger.info("create_specific_grafana_folder_dashboards() ...")
+    logger.info("create_specific_grafana_folder_dashboards(dashboardFolder) ...")
     try:
         logger.info("-------------------------------------")
         logger.info("dashboardFolder: " + dashboardFolder)
@@ -437,7 +426,7 @@ def create_specific_grafana_folder_dashboards(dashboardFolder):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
-    logger.info("create_specific_grafana_folder_dashboards() finish")
+    logger.info("create_specific_grafana_folder_dashboards(dashboardFolder) finish")
     return 0
 
 # restore all grafana dashboards from local grafana files
@@ -457,25 +446,140 @@ def restore_grafana_dashboards():
 
 # restore all grafana dashboards from local grafana files
 def restore_specific_grafana_dashboards_by_foldertitle(folderTitle):
-    logger.info("restore_specific_grafana_dashboards_by_foldertitle() ...")
+    logger.info("restore_specific_grafana_dashboards_by_foldertitle(folderTitle) ...")
     try:
         logger.info("=====================================")
         if DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS:
-            folderUid = str(grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle))
+            folderUid = str(grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle)["uid"])
             grafana_delete_specific_dashboard_folder_data_by_folderuid(folderUid)
-        #create_grafana_dashboards()
         create_specific_grafana_folder_dashboards(folderTitle)
         logger.info("=====================================")
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
-    logger.info("restore_specific_grafana_dashboards_by_foldertitle() finish")
+    logger.info("restore_specific_grafana_dashboards_by_foldertitle(folderTitle) finish")
+    return 0
+
+# get all grafana dashboards list by folderId
+def grafana_get_all_dashboard_data_by_folderId(folderId):
+    import http.client
+    logger.info("grafana_get_all_dashboard_data_by_folderId(folderId) ...")
+    try:
+        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
+        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
+        payload = ''
+        headers = {
+            'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        conn.request("GET", "/api/search?type=dash-db&folderIds=" + str(folderId), payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        #print(data.decode("utf-8"))
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("grafana_get_all_dashboard_data_by_folderId(folderId) finish")
+    return data.decode("utf-8")
+
+# backup grafana all dashboards to local
+def backup_specific_grafana_dashboards_by_foldertitle(folderTitle):
+    logger.info("backup_specific_grafana_dashboards_by_foldertitle(folderTitle) ...")
+    get_and_create_grafana_dashboards_folder_by_foldertitle(folderTitle)
+
+    folderId = str(grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle)["id"])
+    #download_grafana_dashboards()
+    download_grafana_dashboards_by_folderId(folderId)
+    logger.info("backup_specific_grafana_dashboards_by_foldertitle(folderTitle) finish")
+    return 0
+
+
+# get and create specific grafana dash-folder by folderTitle
+def get_and_create_grafana_dashboards_folder_by_foldertitle(folderTitle):
+    logger.info("get_and_create_grafana_dashboards_folder_by_foldertitle(folderTitle) ...")
+    
+    foldersJsonStr = grafana_get_folder()
+    
+    logger.info("restore_grafana_dashboards() ...")
+    try:
+        folderJsonDict = grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle)
+        folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(folderTitle))
+        logger.info("-------------------------------------")
+        logger.debug("folder Json: " + str(folderJsonDict))
+        logger.info("folder title: " + str(folderTitle))
+        logger.info("folder uid: " + str(folderJsonDict["uid"]))
+        logger.info("folder id: " + str(folderJsonDict["id"]))
+        
+        # create folder
+        logger.info("create folder " + folderCreatePath + " ...")
+        os.makedirs(folderCreatePath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+        logger.info("create folder " + folderCreatePath + " finish")
+    
+    
+        folderJsonSavePath = os.path.join(folderCreatePath, "folder.json")
+        # get and create folder json
+        logger.info("save folder json " + folderJsonSavePath + " ...")
+        with open(folderJsonSavePath, 'w+', encoding='UTF-8') as f:
+            f.write(str(folderJsonDict))
+        logger.info("save folder json " + folderJsonSavePath + " finish")
+    except FileNotFoundError:
+        logger.info("The 'docs' directory does not exist")
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("get_and_create_grafana_dashboards_folder_by_foldertitle(folderTitle) finish")
+    return 0
+
+# Get all grafana dashboard json in specific folder (Progressing)
+def download_grafana_dashboards_by_folderId(folderId):
+    logger.info("download_grafana_dashboards_by_folderId(folderId) ...")
+    dashboardsInfoJsonStr = grafana_get_all_dashboard_data_by_folderId(folderId)
+    dashboardsInfoJsonList = json.loads(dashboardsInfoJsonStr)
+    for dashboardInfoJson in dashboardsInfoJsonList:
+        try:
+            logger.info("-------------------------------------")
+            logger.debug("dashboard Json: " + str(dashboardInfoJson))
+            logger.info("dashboard folderTitle: " + str(dashboardInfoJson["folderTitle"]))
+            logger.info("dashboard folderId: " + str(dashboardInfoJson["folderId"]))
+            logger.info("dashboard folderUid: " + str(dashboardInfoJson["folderUid"]))
+            logger.info("dashboard title: " + str(dashboardInfoJson["title"]))
+            logger.info("dashboard uid: " + str(dashboardInfoJson["uid"]))
+            logger.info("dashboard id: " + str(dashboardInfoJson["id"]))
+            
+            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(dashboardInfoJson["folderTitle"]))
+            dashboardSaveDirPath = os.path.join(folderCreatePath, "dashboards")
+
+            # create dashboard folder
+            if not os.path.exists(dashboardSaveDirPath):
+                logger.info("create dashboard folder " + folderCreatePath + " ...")
+                os.makedirs(dashboardSaveDirPath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+                logger.info("create dashboard folder " + folderCreatePath + " finish")
+            dashboardJsonSavePath = os.path.join(dashboardSaveDirPath, str(dashboardInfoJson["title"]))
+            
+            dashboardJsonStr = grafana_get_dashboard_json(str(dashboardInfoJson["uid"]))
+            
+            logger.info("save dashboard json " + dashboardJsonSavePath + " ...")
+            with open(dashboardJsonSavePath, 'w+', encoding='UTF-8') as f:
+                f.write(str(dashboardJsonStr))
+            logger.info("save folder json " + dashboardJsonSavePath + " finish")
+
+        except FileNotFoundError:
+            logger.info("The 'docs' directory does not exist")
+        except Exception as e:
+            logger.debug(e, stack_info=True, exc_info=True)
+            logger.error(e)
+    logger.info("download_grafana_dashboards_by_folderId(folderId) finish")
     return 0
 
 def main(argc, argv, envp):
+    
     #backup_grafana_dashboards()
-    #restore_grafana_dashboards()
-    restore_specific_grafana_dashboards_by_foldertitle("DEV")
+    restore_grafana_dashboards()
+    
+    #backup_specific_grafana_dashboards_by_foldertitle("DEV")
+    #restore_specific_grafana_dashboards_by_foldertitle("DEV")
+    
+    #restore_specific_grafana_dashboards_by_foldertitle("PROD")
+    
     return 0
 
 
