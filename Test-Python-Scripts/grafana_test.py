@@ -25,13 +25,14 @@ GRAFANA_DASHBOARDS_LOAD_PATH = r"D:\test\temp01\grafana-test-gitops\all-dashboar
 IGNORE_FOLDER_IS_EXISTS = True
 #IGNORE_FOLDER_IS_EXISTS = False
 
-#DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = True
-DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = False
+DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = True
+#DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = False
 
 # get grafana dashboard's folders list
 def grafana_get_folder():
     import http.client
     import ssl
+    logger.info("grafana_get_folder() ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -46,11 +47,13 @@ def grafana_get_folder():
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("grafana_get_folder() finish")
     return data.decode("utf-8")
 
 # get all grafana dashboards list
 def grafana_get_all_dashboard_data():
     import http.client
+    logger.info("grafana_get_all_dashboard_data() ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -65,11 +68,13 @@ def grafana_get_all_dashboard_data():
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("grafana_get_all_dashboard_data() finish")
     return data.decode("utf-8")
 
 # get all folder data
 def grafana_get_all_dashboard_folder_data():
     import http.client
+    logger.info("grafana_get_all_dashboard_folder_data() ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -84,11 +89,53 @@ def grafana_get_all_dashboard_folder_data():
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("grafana_get_all_dashboard_folder_data() finish")
     return data.decode("utf-8")
+
+# get specific folder data
+def grafana_delete_specific_dashboard_folder_data_by_folderuid(folderUid):
+    import http.client
+    logger.info("grafana_delete_specific_dashboard_folder_data_by_folderuid() ...")
+    try:
+        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
+        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
+        payload = ''
+        headers = {
+            'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        conn.request("DELETE", "/api/folders/" + folderUid, payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        #print(data.decode("utf-8"))
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("grafana_delete_specific_dashboard_folder_data_by_folderuid() finish")
+    return data.decode("utf-8")
+
+# get specific folder data
+def grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle):
+    import http.client
+    logger.info("grafana_get_specific_dashboard_folder_data_by_folder_title() ...")
+    try:
+        foldersJsonStr = grafana_get_folder()
+        foldersJsonList = json.loads(foldersJsonStr)
+    
+        # get specific folders data by title
+        for folderJsonDic in foldersJsonList:
+            if folderJsonDic["title"] == str(folderTitle):
+                return str(folderJsonDic["uid"])
+        
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("grafana_get_specific_dashboard_folder_data_by_folder_title() finish")
+    return 0
 
 # get specific dashboard json with dashboard uid
 def grafana_get_dashboard_json(dashboard_uid):
     import http.client
+    logger.info("grafana_get_dashboard_json(dashboard_uid) ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -103,24 +150,25 @@ def grafana_get_dashboard_json(dashboard_uid):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
-
+    logger.info("grafana_get_dashboard_json(dashboard_uid) finish")
     return data.decode("utf-8")
 
 # create local folder which is used to save grafana dashboard json
 def get_and_create_grafana_dashboards_folder():
+    logger.info("get_and_create_grafana_dashboards_folder() ...")
     
     foldersJsonStr = grafana_get_folder()
     foldersJsonList = json.loads(foldersJsonStr)
     
     # get all folders data
-    for folderJson in foldersJsonList:
+    for folderJsonDic in foldersJsonList:
         try:
-            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(folderJson["title"]))
+            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(folderJsonDic["title"]))
             logger.info("-------------------------------------")
-            logger.debug("folder Json: " + str(folderJson))
-            logger.info("folder title: " + str(folderJson["title"]))
-            logger.info("folder uid: " + str(folderJson["uid"]))
-            logger.info("folder id: " + str(folderJson["id"]))
+            logger.debug("folder Json: " + str(folderJsonDic))
+            logger.info("folder title: " + str(folderJsonDic["title"]))
+            logger.info("folder uid: " + str(folderJsonDic["uid"]))
+            logger.info("folder id: " + str(folderJsonDic["id"]))
             
             # create folder
             logger.info("create folder " + folderCreatePath + " ...")
@@ -132,19 +180,19 @@ def get_and_create_grafana_dashboards_folder():
             # get and create folder json
             logger.info("save folder json " + folderJsonSavePath + " ...")
             with open(folderJsonSavePath, 'w+', encoding='UTF-8') as f:
-                f.write(str(folderJson))
+                f.write(str(folderJsonDic))
             logger.info("save folder json " + folderJsonSavePath + " finish")
         except FileNotFoundError:
             logger.info("The 'docs' directory does not exist")
         except Exception as e:
             logger.debug(e, stack_info=True, exc_info=True)
             logger.error(e)
-
+    logger.info("get_and_create_grafana_dashboards_folder() finish")
     return 0
 
 # Get all grafana dashboard json
 def download_grafana_dashboards():
-    
+    logger.info("download_grafana_dashboards() ...")
     dashboardsInfoJsonStr = grafana_get_all_dashboard_data()
     dashboardsInfoJsonList = json.loads(dashboardsInfoJsonStr)
     for dashboardInfoJson in dashboardsInfoJsonList:
@@ -180,19 +228,22 @@ def download_grafana_dashboards():
         except Exception as e:
             logger.debug(e, stack_info=True, exc_info=True)
             logger.error(e)
-        
+    logger.info("download_grafana_dashboards() finish")
     return 0
 
 # backup grafana all dashboards to local
 def backup_grafana_dashboards():
+    logger.info("backup_grafana_dashboards() ...")
     get_and_create_grafana_dashboards_folder()
     download_grafana_dashboards()
+    logger.info("backup_grafana_dashboards() finish")
     return 0
 
 # create grafana dashboard
 def create_grafana_dashboard(dashboardJsonDict):
     import http.client
     import json
+    logger.info("create_grafana_dashboard(dashboardJsonDict) ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
@@ -211,10 +262,12 @@ def create_grafana_dashboard(dashboardJsonDict):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("create_grafana_dashboard(dashboardJsonDict) finish")
     return data.decode("utf-8")
 
 # create grafana dashboard
 def create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJsonDic):
+    logger.info("create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJsonDic) ...")
     try:
         logger.info("dashboardLoadPathStr: " + dashboardLoadPathStr)
         dashboardList = [item for item in os.listdir(dashboardLoadPathStr) if os.path.isfile(os.path.join(dashboardLoadPathStr, item))]
@@ -234,25 +287,26 @@ def create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJs
             dashboardJsonDict["folderUid"] = folderGrafanaJsonDic["uid"]
             dashboardJsonDict["dashboard"]["id"] = None
             dashboardJsonDict["dashboard"]["uid"] = None
-            #dashboardJsonDict["overwrite"] = True
             dashboardJsonDict["meta"]["url"] = folderGrafanaJsonDic["url"]
             create_grafana_dashboard(dashboardJsonDict)
             
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("create_grafana_all_dashboard_in_folder(dashboardLoadPathStr, folderGrafanaJsonDic) finish")
     return 0
 
 # create grafana dashboard's folder
-def create_grafana_dashboard_folder(folderJsonStr):
+def create_grafana_dashboard_folder(folderJsonDic):
     import http.client
     import json
+    logger.info("create_grafana_dashboard_folder(folderJsonStr) ...")
     try:
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
         conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
-        payload = json.dumps(eval(folderJsonStr))
+        payload = json.dumps(folderJsonDic)
 
-        logger.debug("folderJsonStr: " + folderJsonStr)
+        logger.debug("folderJsonStr: " + str(folderJsonDic))
         logger.debug("payload: " + payload)
         headers = {
           'Content-Type': 'application/json',
@@ -265,12 +319,14 @@ def create_grafana_dashboard_folder(folderJsonStr):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("create_grafana_dashboard_folder(folderJsonStr) finish")
     return data.decode("utf-8")
 
 # delete grafana dashboard's folder
 def delete_grafana_dashboard_folder(folderUid):
     import http.client
     import json
+    logger.info("delete_grafana_dashboard_folder() ...")
     try:
         logger.info("delete_grafana_dashboard_folder delete folder folderUid " + folderUid + " ...")
         #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
@@ -289,10 +345,12 @@ def delete_grafana_dashboard_folder(folderUid):
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("delete_grafana_dashboard_folder() finish")
     return data.decode("utf-8")
 
 # create all grafana dashboards
 def create_grafana_dashboards():
+    logger.info("create_grafana_dashboards() ...")
     try:
         dashboardFoldersList = [item for item in os.listdir(GRAFANA_DASHBOARDS_LOAD_PATH) if os.path.isdir(os.path.join(GRAFANA_DASHBOARDS_LOAD_PATH, item))]
         for dashboardFolder in dashboardFoldersList:
@@ -309,7 +367,8 @@ def create_grafana_dashboards():
             
             # read dashboard folder json and create dashboard folder and get folder return json data
             with open(folderJsonLoadPath, 'r', encoding='UTF-8') as f:
-                folderCreateReturnJsonDic = json.loads(create_grafana_dashboard_folder(f.read()))
+                folderJsonDic = eval(f.read())
+                folderCreateReturnJsonDic = json.loads(create_grafana_dashboard_folder(folderJsonDic))
                 logger.debug("folderCreateReturnJsonDic: " + str(folderCreateReturnJsonDic))
                 logger.info("folder id: " + str(folderCreateReturnJsonDic["id"]))
                 logger.info("folder title: " + str(folderCreateReturnJsonDic["title"]))
@@ -322,18 +381,68 @@ def create_grafana_dashboards():
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("create_grafana_dashboards() finish")
     return 0
 
+# delete all grafana dashboards and folders
 def delete_all_grafana_dashboards():
+    logger.info("delete_all_grafana_dashboards() ...")
     dashboardFoldersInfoJsonStr = grafana_get_all_dashboard_folder_data()
     dashboardFoldersInfoJsonList = json.loads(dashboardFoldersInfoJsonStr)
     for dashboardFoldersInfoJson in dashboardFoldersInfoJsonList:
         logger.info("dashboardFoldersInfoJson: " + str(dashboardFoldersInfoJson))
         delete_grafana_dashboard_folder(str(dashboardFoldersInfoJson["uid"]))
+    logger.info("delete_all_grafana_dashboards() finish")
+    return 0
+
+# (progressing)
+def delete_specific_grafana_folder_dashboards():
+    logger.info("delete_specific_grafana_folder_dashboards() ...")
+    dashboardFoldersInfoJsonStr = grafana_get_all_dashboard_folder_data()
+    dashboardFoldersInfoJsonList = json.loads(dashboardFoldersInfoJsonStr)
+    for dashboardFoldersInfoJson in dashboardFoldersInfoJsonList:
+        logger.info("dashboardFoldersInfoJson: " + str(dashboardFoldersInfoJson))
+        delete_grafana_dashboard_folder(str(dashboardFoldersInfoJson["uid"]))
+    logger.info("delete_specific_grafana_folder_dashboards() finish")
+    return 0
+
+# create all grafana dashboards in specific folder
+def create_specific_grafana_folder_dashboards(dashboardFolder):
+    logger.info("create_specific_grafana_folder_dashboards() ...")
+    try:
+        logger.info("-------------------------------------")
+        logger.info("dashboardFolder: " + dashboardFolder)
+        
+        # get grafana dashboard folder load path
+        folderLoadPath = os.path.join(GRAFANA_DASHBOARDS_LOAD_PATH, dashboardFolder)
+        logger.info("folderLoadPath: " + folderLoadPath)
+        
+        # get grafana dashboard folder json load path
+        folderJsonLoadPath = os.path.join(folderLoadPath, "folder.json")
+        logger.info("folderJsonLoadPath: " + folderJsonLoadPath)
+        
+        # read dashboard folder json and create dashboard folder and get folder return json data
+        with open(folderJsonLoadPath, 'r', encoding='UTF-8') as f:
+            folderJsonDic = eval(f.read())
+            folderCreateReturnJsonDic = json.loads(create_grafana_dashboard_folder(folderJsonDic))
+            logger.debug("folderCreateReturnJsonDic: " + str(folderCreateReturnJsonDic))
+            logger.info("folder id: " + str(folderCreateReturnJsonDic["id"]))
+            logger.info("folder title: " + str(folderCreateReturnJsonDic["title"]))
+            logger.info("folder uid: " + str(folderCreateReturnJsonDic["uid"]))
+            logger.info("folder url: " + str(folderCreateReturnJsonDic["url"]))
+            
+            dashboardsLoadPath = os.path.join(folderLoadPath, "dashboards")
+            create_grafana_all_dashboard_in_folder(dashboardsLoadPath, folderCreateReturnJsonDic)
+            
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("create_specific_grafana_folder_dashboards() finish")
     return 0
 
 # restore all grafana dashboards from local grafana files
 def restore_grafana_dashboards():
+    logger.info("restore_grafana_dashboards() ...")
     try:
         logger.info("=====================================")
         if DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS:
@@ -343,11 +452,30 @@ def restore_grafana_dashboards():
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
+    logger.info("restore_grafana_dashboards() finish")
+    return 0
+
+# restore all grafana dashboards from local grafana files
+def restore_specific_grafana_dashboards_by_foldertitle(folderTitle):
+    logger.info("restore_specific_grafana_dashboards_by_foldertitle() ...")
+    try:
+        logger.info("=====================================")
+        if DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS:
+            folderUid = str(grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle))
+            grafana_delete_specific_dashboard_folder_data_by_folderuid(folderUid)
+        #create_grafana_dashboards()
+        create_specific_grafana_folder_dashboards(folderTitle)
+        logger.info("=====================================")
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("restore_specific_grafana_dashboards_by_foldertitle() finish")
     return 0
 
 def main(argc, argv, envp):
     #backup_grafana_dashboards()
-    restore_grafana_dashboards()
+    #restore_grafana_dashboards()
+    restore_specific_grafana_dashboards_by_foldertitle("DEV")
     return 0
 
 
