@@ -15,18 +15,16 @@ logger.setLevel(logging.INFO)
 
 import json
 
-GRAFANA_IP = "<IP>"
-GRAFANA_PORT = <PORT>
-GRAFANA_BEARER = r'<TOKEN>'
+GRAFANA_IP = str(os.getenv(r"GRAFANA_IP"))
+GRAFANA_PORT = int(str(os.getenv(r"GRAFANA_PORT")))
+GRAFANA_BEARER = str(os.getenv(r"GRAFANA_BEARER"))
 
-GRAFANA_DASHBOARDS_SAVE_PATH = r"D:\test\temp01\grafana-test-gitops\all-dashboards"
-GRAFANA_DASHBOARDS_LOAD_PATH = r"D:\test\temp01\grafana-test-gitops\all-dashboards"
+GRAFANA_DASHBOARDS_SAVE_PATH = os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH")
+GRAFANA_DASHBOARDS_LOAD_PATH = os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH")
 
-IGNORE_FOLDER_IS_EXISTS = True
-#IGNORE_FOLDER_IS_EXISTS = False
+IGNORE_FOLDER_IS_EXISTS = bool(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
 
-DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = True
-#DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = False
+DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = bool(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
 
 # get grafana dashboard's folders list
 def grafana_get_folder():
