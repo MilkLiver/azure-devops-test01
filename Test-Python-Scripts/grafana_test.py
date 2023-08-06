@@ -8,6 +8,7 @@ Created on Thu Jul 27 15:54:45 2023
 import sys,os
 import logging
 
+logging.basicConfig()
 logger = logging.getLogger()
 #logger.setLevel(logging.NOTSET)
 #logger.setLevel(logging.DEBUG)
@@ -18,6 +19,7 @@ import json
 GRAFANA_IP = str(os.getenv(r"GRAFANA_IP"))
 GRAFANA_PORT = int(str(os.getenv(r"GRAFANA_PORT")))
 GRAFANA_BEARER = str(os.getenv(r"GRAFANA_BEARER"))
+GRAFANA_ISHTTPS = bool(str(os.getenv(r"GRAFANA_ISHTTPS")))
 
 GRAFANA_DASHBOARDS_SAVE_PATH = os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH")
 GRAFANA_DASHBOARDS_LOAD_PATH = os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH")
@@ -26,27 +28,58 @@ IGNORE_FOLDER_IS_EXISTS = bool(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
 
 DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = bool(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
 
+# def init_env:
+#     import http.client
+#     logger.info("grafana_get_all_dashboard_data() ...")
+#     try:
+#         aaa
+#     except Exception as e:
+#         logger.debug(e, stack_info=True, exc_info=True)
+#         logger.error(e)
+#     logger.info("grafana_get_all_dashboard_data() finish")
+#     return data.decode("utf-8")
+
+# copy this data=send_request()
+# used to send request
+def send_request(method,uri,payload,headers):
+    import http.client
+    import ssl
+    logger.info("send_request() ...")
+    try:
+        if GRAFANA_ISHTTPS:
+            conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
+        else:
+            conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
+        payload = ''
+        headers = {
+            'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        conn.request(str(method), str(uri), payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("send_request() finish")
+    return data.decode("utf-8")
+
 # get grafana dashboard's folders list
 def grafana_get_folder():
     import http.client
     import ssl
     logger.info("grafana_get_folder() ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("GET", "/api/folders", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        data=send_request("GET", "/api/folders", payload, headers)
         #print(data.decode("utf-8"))
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_get_folder() finish")
-    return data.decode("utf-8")
+    return data
 
 # get all grafana dashboards list
 def grafana_get_all_dashboard_data():
@@ -59,57 +92,47 @@ def grafana_get_all_dashboard_data():
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("GET", "/api/search?type=dash-db", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        data=send_request("GET", "/api/search?type=dash-db", payload, headers)
         #print(data.decode("utf-8"))
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_get_all_dashboard_data() finish")
-    return data.decode("utf-8")
+    return data
 
 # get all folder data
 def grafana_get_all_dashboard_folder_data():
     import http.client
     logger.info("grafana_get_all_dashboard_folder_data() ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("GET", "/api/search?type=dash-folder", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        data=send_request("GET", "/api/search?type=dash-folder", payload, headers)
         #print(data.decode("utf-8"))
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_get_all_dashboard_folder_data() finish")
-    return data.decode("utf-8")
+    return data
 
 # delete specific folder by folderUid
 def grafana_delete_specific_dashboard_folder_data_by_folderuid(folderUid):
     import http.client
     logger.info("grafana_delete_specific_dashboard_folder_data_by_folderuid() ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("DELETE", "/api/folders/" + folderUid, payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        data=send_request("DELETE", "/api/folders/" + folderUid, payload, headers)
         #print(data.decode("utf-8"))
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_delete_specific_dashboard_folder_data_by_folderuid() finish")
-    return data.decode("utf-8")
+    return data
 
 # get specific folder data
 def grafana_get_specific_dashboard_folder_data_by_folder_title(folderTitle):
@@ -135,21 +158,17 @@ def grafana_get_dashboard_json(dashboard_uid):
     import http.client
     logger.info("grafana_get_dashboard_json(dashboard_uid) ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
           'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("GET", "/api/dashboards/uid/" + dashboard_uid, payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        data=send_request("GET", "/api/dashboards/uid/" + dashboard_uid, payload, headers)
         #print(data.decode("utf-8"))
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_get_dashboard_json(dashboard_uid) finish")
-    return data.decode("utf-8")
+    return data
 
 # create local folder which is used to save grafana dashboard json
 def get_and_create_grafana_dashboards_folder():
@@ -193,20 +212,33 @@ def download_grafana_dashboards():
     logger.info("download_grafana_dashboards() ...")
     dashboardsInfoJsonStr = grafana_get_all_dashboard_data()
     dashboardsInfoJsonList = json.loads(dashboardsInfoJsonStr)
+    logger.info("dashboardsInfoJsonStr: " + dashboardsInfoJsonStr)
     for dashboardInfoJson in dashboardsInfoJsonList:
         try:
             logger.info("-------------------------------------")
             logger.debug("dashboard Json: " + str(dashboardInfoJson))
-            logger.info("dashboard folderTitle: " + str(dashboardInfoJson["folderTitle"]))
-            logger.info("dashboard folderId: " + str(dashboardInfoJson["folderId"]))
-            logger.info("dashboard folderUid: " + str(dashboardInfoJson["folderUid"]))
-            logger.info("dashboard title: " + str(dashboardInfoJson["title"]))
-            logger.info("dashboard uid: " + str(dashboardInfoJson["uid"]))
-            logger.info("dashboard id: " + str(dashboardInfoJson["id"]))
-            
-            folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(dashboardInfoJson["folderTitle"]))
-            dashboardSaveDirPath = os.path.join(folderCreatePath, "dashboards")
 
+            # is default dash-folder
+            if dashboardInfoJson.get("folderId") is None:
+                logger.info("dashboard title: " + str(dashboardInfoJson["title"]))
+                logger.info("dashboard uid: " + str(dashboardInfoJson["uid"]))
+                logger.info("dashboard id: " + str(dashboardInfoJson["id"]))
+                
+                folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, "General")
+                dashboardSaveDirPath = os.path.join(folderCreatePath, "dashboards")
+                
+            # not default dash-folder
+            else:
+                logger.info("dashboard folderTitle: " + str(dashboardInfoJson["folderTitle"]))
+                logger.info("dashboard folderId: " + str(dashboardInfoJson["folderId"]))
+                logger.info("dashboard folderUid: " + str(dashboardInfoJson["folderUid"]))
+                logger.info("dashboard title: " + str(dashboardInfoJson["title"]))
+                logger.info("dashboard uid: " + str(dashboardInfoJson["uid"]))
+                logger.info("dashboard id: " + str(dashboardInfoJson["id"]))
+                
+                folderCreatePath = os.path.join(GRAFANA_DASHBOARDS_SAVE_PATH, str(dashboardInfoJson["folderTitle"]))
+                dashboardSaveDirPath = os.path.join(folderCreatePath, "dashboards")
+    
             # create dashboard folder
             if not os.path.exists(dashboardSaveDirPath):
                 logger.info("create dashboard folder " + folderCreatePath + " ...")
@@ -570,8 +602,8 @@ def download_grafana_dashboards_by_folderId(folderId):
 
 def main(argc, argv, envp):
     
-    #backup_grafana_dashboards()
-    restore_grafana_dashboards()
+    backup_grafana_dashboards()
+    #restore_grafana_dashboards()
     
     #backup_specific_grafana_dashboards_by_foldertitle("DEV")
     #restore_specific_grafana_dashboards_by_foldertitle("DEV")
