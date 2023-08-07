@@ -21,6 +21,8 @@ stages:
       persistCredentials: true
     - script: python3 Test-Python-Scripts/grafana_backup.py
       workingDirectory: '$(System.DefaultWorkingDirectory)'
+      env:
+        GRAFANA_BEARER: '$(GRAFANA_BEARER)'
     - script: ls
       workingDirectory: '$(System.DefaultWorkingDirectory)'
     - script: ls

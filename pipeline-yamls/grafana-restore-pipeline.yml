@@ -21,3 +21,5 @@ stages:
       persistCredentials: true
     - script: python3 Test-Python-Scripts/grafana_restore.py
       workingDirectory: '$(System.DefaultWorkingDirectory)'
+      env:
+        GRAFANA_BEARER: '$(GRAFANA_BEARER)'
