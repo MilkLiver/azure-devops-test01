@@ -19,25 +19,35 @@ import json
 GRAFANA_IP = str(os.getenv(r"GRAFANA_IP"))
 GRAFANA_PORT = int(str(os.getenv(r"GRAFANA_PORT")))
 GRAFANA_BEARER = str(os.getenv(r"GRAFANA_BEARER"))
-GRAFANA_ISHTTPS = bool(str(os.getenv(r"GRAFANA_ISHTTPS")))
+GRAFANA_ISHTTPS = eval(str(os.getenv(r"GRAFANA_ISHTTPS")))
 
 GRAFANA_DASHBOARDS_SAVE_PATH = os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH")
 GRAFANA_DASHBOARDS_LOAD_PATH = os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH")
 
-IGNORE_FOLDER_IS_EXISTS = bool(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
+IGNORE_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
 
-DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = bool(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
+DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = eval(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
 
-# def init_env:
-#     import http.client
-#     logger.info("grafana_get_all_dashboard_data() ...")
-#     try:
-#         aaa
-#     except Exception as e:
-#         logger.debug(e, stack_info=True, exc_info=True)
-#         logger.error(e)
-#     logger.info("grafana_get_all_dashboard_data() finish")
-#     return data.decode("utf-8")
+def init_env():
+    import http.client
+    logger.info("init_env() ...")
+    try:
+        logger.info("GRAFANA_IP: " + str(GRAFANA_IP))
+        logger.info("GRAFANA_PORT: " + str(GRAFANA_PORT))
+        logger.info("GRAFANA_BEARER: " + "**************")
+        logger.info("GRAFANA_ISHTTPS: " + str(GRAFANA_ISHTTPS))
+
+        logger.info("GRAFANA_DASHBOARDS_SAVE_PATH: " + str(GRAFANA_DASHBOARDS_SAVE_PATH))
+        logger.info("GRAFANA_DASHBOARDS_LOAD_PATH: " + str(GRAFANA_DASHBOARDS_LOAD_PATH))
+
+        logger.info("IGNORE_FOLDER_IS_EXISTS: " + str(IGNORE_FOLDER_IS_EXISTS))
+
+        logger.info("DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS: " + str(DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS))
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("init_env() finish")
+    return 0
 
 # copy this data=send_request()
 # used to send request
@@ -602,8 +612,8 @@ def download_grafana_dashboards_by_folderId(folderId):
 
 def main(argc, argv, envp):
     
-    backup_grafana_dashboards()
-    #restore_grafana_dashboards()
+    #backup_grafana_dashboards()
+    restore_grafana_dashboards()
     
     #backup_specific_grafana_dashboards_by_foldertitle("DEV")
     #restore_specific_grafana_dashboards_by_foldertitle("DEV")
