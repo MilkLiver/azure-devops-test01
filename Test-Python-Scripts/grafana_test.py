@@ -298,7 +298,7 @@ def create_grafana_dashboard(dashboardJsonDict):
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        data = send_request("POST", "/api/dashboards/import", payload, headers)
+        data = send_request("POST", "/api/dashboards/db", payload, headers)
         logger.info(data)
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
@@ -603,10 +603,10 @@ def download_grafana_dashboards_by_folderId(folderId):
 def main(argc, argv, envp):
     
     #backup_grafana_dashboards()
-    #restore_grafana_dashboards()
+    restore_grafana_dashboards()
     
     #backup_specific_grafana_dashboards_by_foldertitle("DEV")
-    restore_specific_grafana_dashboards_by_foldertitle("DEV")
+    #restore_specific_grafana_dashboards_by_foldertitle("DEV")
     
     #restore_specific_grafana_dashboards_by_foldertitle("PROD")
     
