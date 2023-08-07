@@ -1,0 +1,48 @@
+# pool:
+#   vmImage: 'VS2017-Win2016'
+
+# variables:
+#   solution: '**/*.sln'
+#   buildPlatform: 'Any CPU'
+#   buildConfiguration: 'Release'
+variables:
+- group: "grafana-env"
+
+trigger: none
+
+stages:
+- stage: "backup_grafana_all_dashboards"
+  jobs:
+  - job: "get_current_grafana_all_dashboards"
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - script: python3 Test-Python-Scripts/grafana_backup.py
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - script: ls
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - script: ls
+      workingDirectory: '$(System.DefaultWorkingDirectory)/grafana_backup_data'
+    # - script: 'tar -czvf grafana_backup_data.tgz $(System.DefaultWorkingDirectory)/grafana_backup_data'
+    #   workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - publish: '$(System.DefaultWorkingDirectory)/grafana_backup_data'
+      artifact: 'DEV-GrafanaDashboards'
+  - job: "git_push_all_grafana_dashboards"
+    dependsOn: "get_current_grafana_all_dashboards"
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - download: current
+      artifact: 'DEV-GrafanaDashboards'  
+    - script: 'ls $(Pipeline.Workspace)'
+    - script: 'ls $(Pipeline.Workspace)/DEV-GrafanaDashboards'
+    - script: 'mv $(Pipeline.Workspace)/DEV-GrafanaDashboards $(System.DefaultWorkingDirectory)/grafana_backup_data'
+    - script: git config --global user.email "dio@example.com"
+    - script: git config --global user.name "dio"
+    - script: git add -A
+    - script: git commit -m "update to newest grafana dashboards"
+    - script: git push origin HEAD:main
