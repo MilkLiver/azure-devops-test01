@@ -101,14 +101,11 @@ def grafana_get_all_dashboard_data():
     import http.client
     logger.info("grafana_get_all_dashboard_data() ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        data=send_request("GET", "/api/search?type=dash-db", payload, headers)
-        #print(data.decode("utf-8"))
+        data = send_request("GET", "/api/search?type=dash-db", payload, headers)
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
@@ -502,21 +499,17 @@ def grafana_get_all_dashboard_data_by_folderId(folderId):
     import http.client
     logger.info("grafana_get_all_dashboard_data_by_folderId(folderId) ...")
     try:
-        #conn = http.client.HTTPSConnection(GRAFANA_IP, GRAFANA_PORT, context = ssl._create_unverified_context())
-        conn = http.client.HTTPConnection(GRAFANA_IP, GRAFANA_PORT)
         payload = ''
         headers = {
             'Authorization': 'Bearer ' + GRAFANA_BEARER
         }
-        conn.request("GET", "/api/search?type=dash-db&folderIds=" + str(folderId), payload, headers)
-        res = conn.getresponse()
-        data = res.read()
-        #print(data.decode("utf-8"))
+
+        data = send_request("GET", "/api/search?type=dash-db&folderIds=" + str(folderId), payload, headers)
     except Exception as e:
         logger.debug(e, stack_info=True, exc_info=True)
         logger.error(e)
     logger.info("grafana_get_all_dashboard_data_by_folderId(folderId) finish")
-    return data.decode("utf-8")
+    return data
 
 # backup grafana all dashboards to local
 def backup_specific_grafana_dashboards_by_foldertitle(folderTitle):
@@ -610,10 +603,10 @@ def download_grafana_dashboards_by_folderId(folderId):
 def main(argc, argv, envp):
     
     #backup_grafana_dashboards()
-    restore_grafana_dashboards()
+    #restore_grafana_dashboards()
     
     #backup_specific_grafana_dashboards_by_foldertitle("DEV")
-    #restore_specific_grafana_dashboards_by_foldertitle("DEV")
+    restore_specific_grafana_dashboards_by_foldertitle("DEV")
     
     #restore_specific_grafana_dashboards_by_foldertitle("PROD")
     
