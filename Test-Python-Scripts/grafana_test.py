@@ -21,16 +21,22 @@ GRAFANA_PORT = int(str(os.getenv(r"GRAFANA_PORT")))
 GRAFANA_BEARER = str(os.getenv(r"GRAFANA_BEARER"))
 GRAFANA_ISHTTPS = eval(str(os.getenv(r"GRAFANA_ISHTTPS")))
 
-GRAFANA_DASHBOARDS_SAVE_PATH = os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH")
-GRAFANA_DASHBOARDS_LOAD_PATH = os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH")
+GRAFANA_DASHBOARDS_SAVE_PATH = str(os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH"))
+GRAFANA_DASHBOARDS_LOAD_PATH = str(os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH"))
 
-IGNORE_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
+IGNORE_DASHBOARD_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_DASHBOARD_FOLDER_IS_EXISTS")))
 
 DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = eval(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
 
 # Not finished yet, not sure if this is needed.
 IGNORE_GENERAL_FOLDER = True
 #IGNORE_GENERAL_FOLDER = eval(str(os.getenv(r"IGNORE_GENERAL_FOLDER")))
+
+# --------------------------------------------------------------------
+IGNORE_DATASOURCE_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_DATASOURCE_FOLDER_IS_EXISTS")))
+GRAFANA_DATASOURCE_SAVE_PATH = str(os.getenv(r"GRAFANA_DATASOURCE_SAVE_PATH"))
+GRAFANA_DATASOURCE_LOAD_PATH = str(os.getenv(r"GRAFANA_DATASOURCE_LOAD_PATH"))
+
 
 # used to do some init jobs and show info
 def init_env():
@@ -45,7 +51,7 @@ def init_env():
         logger.info("GRAFANA_DASHBOARDS_SAVE_PATH: " + str(GRAFANA_DASHBOARDS_SAVE_PATH))
         logger.info("GRAFANA_DASHBOARDS_LOAD_PATH: " + str(GRAFANA_DASHBOARDS_LOAD_PATH))
 
-        logger.info("IGNORE_FOLDER_IS_EXISTS: " + str(IGNORE_FOLDER_IS_EXISTS))
+        logger.info("IGNORE_DASHBOARD_FOLDER_IS_EXISTS: " + str(IGNORE_DASHBOARD_FOLDER_IS_EXISTS))
 
         logger.info("DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS: " + str(DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS))
     except Exception as e:
@@ -201,7 +207,7 @@ def get_and_create_grafana_dashboards_folder():
             
             # create folder
             logger.info("create folder " + folderCreatePath + " ...")
-            os.makedirs(folderCreatePath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+            os.makedirs(folderCreatePath, exist_ok=IGNORE_DASHBOARD_FOLDER_IS_EXISTS)
             logger.info("create folder " + folderCreatePath + " finish")
         
         
@@ -257,7 +263,7 @@ def download_grafana_dashboards():
             # create dashboard folder
             if not os.path.exists(dashboardSaveDirPath):
                 logger.info("create dashboard folder " + folderCreatePath + " ...")
-                os.makedirs(dashboardSaveDirPath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+                os.makedirs(dashboardSaveDirPath, exist_ok=IGNORE_DASHBOARD_FOLDER_IS_EXISTS)
                 logger.info("create dashboard folder " + folderCreatePath + " finish")
             dashboardJsonSavePath = os.path.join(dashboardSaveDirPath, str(dashboardInfoJson["title"]))
             
@@ -541,7 +547,7 @@ def get_and_create_grafana_dashboards_folder_by_foldertitle(folderTitle):
         
         # create folder
         logger.info("create folder " + folderCreatePath + " ...")
-        os.makedirs(folderCreatePath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+        os.makedirs(folderCreatePath, exist_ok=IGNORE_DASHBOARD_FOLDER_IS_EXISTS)
         logger.info("create folder " + folderCreatePath + " finish")
     
     
@@ -581,7 +587,7 @@ def download_grafana_dashboards_by_folderId(folderId):
             # create dashboard folder
             if not os.path.exists(dashboardSaveDirPath):
                 logger.info("create dashboard folder " + folderCreatePath + " ...")
-                os.makedirs(dashboardSaveDirPath, exist_ok=IGNORE_FOLDER_IS_EXISTS)
+                os.makedirs(dashboardSaveDirPath, exist_ok=IGNORE_DASHBOARD_FOLDER_IS_EXISTS)
                 logger.info("create dashboard folder " + folderCreatePath + " finish")
             dashboardJsonSavePath = os.path.join(dashboardSaveDirPath, str(dashboardInfoJson["title"]))
             
@@ -600,15 +606,87 @@ def download_grafana_dashboards_by_folderId(folderId):
     logger.info("download_grafana_dashboards_by_folderId(folderId) finish")
     return 0
 
+
+# ====================================================================
+
+# get grafana dashboard's folders list
+def grafana_get_datasource():
+    import http.client
+    import ssl
+    logger.info("grafana_get_datasource() ...")
+    try:
+        payload = ''
+        headers = {
+            'Authorization': 'Bearer ' + GRAFANA_BEARER
+        }
+        data=send_request("GET", "/api/datasources", payload, headers)
+        
+    except Exception as e:
+        logger.debug(e, stack_info=True, exc_info=True)
+        logger.error(e)
+    logger.info("grafana_get_datasource() finish")
+    return data
+
+def get_and_create_grafana_datasource():
+    logger.info("get_and_create_grafana_datasource() ...")
+    
+    datasourceJsonStr = grafana_get_datasource()
+    datasourceJsonList = json.loads(datasourceJsonStr)
+    
+    logger.info("create save datasource folder " + GRAFANA_DATASOURCE_SAVE_PATH + " ...")
+    os.makedirs(GRAFANA_DATASOURCE_SAVE_PATH, exist_ok=IGNORE_DATASOURCE_FOLDER_IS_EXISTS)
+    logger.info("create save datasource folder " + GRAFANA_DATASOURCE_SAVE_PATH + " finish")
+    
+    # get all folders data
+    for datasourceJsonDict in datasourceJsonList:
+        try:
+            logger.info("-------------------------------------")
+            logger.debug("datasource Json: " + str(datasourceJsonDict))
+            
+            logger.info("datasource title: " + str(datasourceJsonDict["name"]))
+            logger.info("datasource uid: " + str(datasourceJsonDict["uid"]))
+            logger.info("datasource id: " + str(datasourceJsonDict["type"]))
+        
+        
+            datasourceJsonSavePath = os.path.join(GRAFANA_DATASOURCE_SAVE_PATH, str(datasourceJsonDict["name"]))    
+            # get and create folder json
+            logger.info("save datasource json " + datasourceJsonSavePath + " ...")
+            with open(datasourceJsonSavePath, 'w+', encoding='UTF-8') as f:
+                f.write(str(datasourceJsonDict))
+            logger.info("save datasource json " + datasourceJsonSavePath + " finish")
+        except FileNotFoundError:
+            logger.info("The 'docs' directory does not exist")
+        except Exception as e:
+            logger.debug(e, stack_info=True, exc_info=True)
+            logger.error(e)
+    logger.info("get_and_create_grafana_datasource() finish")
+    return 0
+
+
+# backup grafana all datasource to local
+def backup_grafana_datasource():
+    logger.info("backup_grafana_datasource() ...")
+    get_and_create_grafana_datasource()
+    logger.info("backup_grafana_datasource() finish")
+    return 0
+
+
+# ====================================================================
+
+
 def main(argc, argv, envp):
     
     #backup_grafana_dashboards()
-    restore_grafana_dashboards()
+    #restore_grafana_dashboards()
     
     #backup_specific_grafana_dashboards_by_foldertitle("DEV")
     #restore_specific_grafana_dashboards_by_foldertitle("DEV")
     
     #restore_specific_grafana_dashboards_by_foldertitle("PROD")
+    
+    
+    backup_grafana_datasource()
+    #restore_grafana_datasource()
     
     return 0
 
