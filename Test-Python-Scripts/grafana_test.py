@@ -33,7 +33,7 @@ IGNORE_DATASOURCE_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_DATASOURCE_FOLD
 GRAFANA_DATASOURCE_SAVE_PATH = os.getenv(r"GRAFANA_DATASOURCE_SAVE_PATH")
 GRAFANA_DATASOURCE_LOAD_PATH = os.getenv(r"GRAFANA_DATASOURCE_LOAD_PATH")
 
-DELETE_CURRENT_ALL_GRAFANA_DATASOURCE = True
+DELETE_CURRENT_ALL_GRAFANA_DATASOURCE = eval(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DATASOURCE")))
 
 # --------------------------------------------------------------------
 # Not finished yet, not sure if this is needed.
