@@ -1,5 +1,3 @@
-# pool:
-#   vmImage: 'VS2017-Win2016'
 
 # variables:
 #   solution: '**/*.sln'
@@ -15,22 +13,17 @@ stages:
   jobs:
   - job: "get_current_grafana_all_dashboards"
     pool:
-      vmImage: 'ubuntu-latest'
+      name: "selfVM"
+      # vmImage: 'ubuntu-latest'
     steps:
     - checkout: self
       persistCredentials: true
-    - script: python3 Test-Python-Scripts/grafana_backup.py
+    - script: python3 python-scripts/grafana_backup.py
       workingDirectory: '$(System.DefaultWorkingDirectory)'
       env:
         GRAFANA_BEARER: '$(GRAFANA_BEARER)'
-    - script: ls
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-    - script: ls
-      workingDirectory: '$(System.DefaultWorkingDirectory)/grafana_backup_data'
-    # - script: 'tar -czvf grafana_backup_data.tgz $(System.DefaultWorkingDirectory)/grafana_backup_data'
-    #   workingDirectory: '$(System.DefaultWorkingDirectory)'
     - publish: '$(System.DefaultWorkingDirectory)/grafana_backup_data'
-      artifact: 'DEV-GrafanaDashboards'
+      artifact: 'backup-GrafanaDashboards'
   - job: "git_push_all_grafana_dashboards"
     dependsOn: "get_current_grafana_all_dashboards"
     pool:
@@ -39,10 +32,10 @@ stages:
     - checkout: self
       persistCredentials: true
     - download: current
-      artifact: 'DEV-GrafanaDashboards'  
+      artifact: 'backup-GrafanaDashboards'  
     - script: 'ls $(Pipeline.Workspace)'
-    - script: 'ls $(Pipeline.Workspace)/DEV-GrafanaDashboards'
-    - script: 'mv $(Pipeline.Workspace)/DEV-GrafanaDashboards $(System.DefaultWorkingDirectory)/grafana_backup_data'
+    - script: 'ls $(Pipeline.Workspace)/backup-GrafanaDashboards'
+    - script: 'mv $(Pipeline.Workspace)/backup-GrafanaDashboards $(System.DefaultWorkingDirectory)/grafana_backup_data'
     - script: git config --global user.email "dio@example.com"
     - script: git config --global user.name "dio"
     - script: git add -A

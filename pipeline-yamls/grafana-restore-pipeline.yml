@@ -1,6 +1,3 @@
-# pool:
-#   vmImage: 'VS2017-Win2016'
-
 # variables:
 #   solution: '**/*.sln'
 #   buildPlatform: 'Any CPU'
@@ -15,11 +12,12 @@ stages:
   jobs:
   - job: "get_current_grafana_all_dashboards"
     pool:
-      vmImage: 'ubuntu-latest'
+      name: "selfVM"
+      # vmImage: 'ubuntu-latest'
     steps:
     - checkout: self
       persistCredentials: true
-    - script: python3 Test-Python-Scripts/grafana_restore.py
+    - script: python3 python-scripts/grafana_restore.py
       workingDirectory: '$(System.DefaultWorkingDirectory)'
       env:
         GRAFANA_BEARER: '$(GRAFANA_BEARER)'
