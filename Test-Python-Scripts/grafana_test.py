@@ -25,7 +25,7 @@ GRAFANA_ISHTTPS = eval(str(os.getenv(r"GRAFANA_ISHTTPS")))
 # --------------------------------------------------------------------
 GRAFANA_DASHBOARDS_SAVE_PATH = os.getenv(r"GRAFANA_DASHBOARDS_SAVE_PATH")
 GRAFANA_DASHBOARDS_LOAD_PATH = os.getenv(r"GRAFANA_DASHBOARDS_LOAD_PATH")
-IGNORE_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_FOLDER_IS_EXISTS")))
+IGNORE_DASHBOARD_FOLDER_IS_EXISTS = eval(str(os.getenv(r"IGNORE_DASHBOARD_FOLDER_IS_EXISTS")))
 DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS = eval(str(os.getenv(r"DELETE_CURRENT_ALL_GRAFANA_DASHBOARDS")))
 
 # --------------------------------------------------------------------
